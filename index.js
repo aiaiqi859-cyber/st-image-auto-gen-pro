@@ -355,6 +355,16 @@ async function generateAndInsertImage(messageIndex) {
         const messageElement = $(`.mes[mesid="${messageIndex}"]`);
 
         if (!message.extra) message.extra = {};
+
+        if (!Array.isArray(message.extra.image_swipes)) {
+            message.extra.image_swipes = [];
+        }
+
+        if (message.extra.image && !message.extra.image_swipes.includes(message.extra.image)) {
+            message.extra.image_swipes.push(message.extra.image);
+        }
+
+        message.extra.image_swipes.push(imageUrl);
         message.extra.image = imageUrl;
         message.extra.title = chineseCaption;
         message.extra.inline_image = true;
