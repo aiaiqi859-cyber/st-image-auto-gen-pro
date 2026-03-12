@@ -1,0 +1,121 @@
+<div class="inline-drawer">
+    <div class="inline-drawer-toggle inline-drawer-header">
+        <b data-i18n="Image Auto Gen Pro">Image Auto Gen Pro</b>
+        <div class="inline-drawer-icon fa-solid fa-circle-chevron-down down"></div>
+    </div>
+    <div class="inline-drawer-content">
+        <!-- 标签页导航 -->
+        <div class="flex-container flexGap5">
+            <button id="tab_llm" class="menu_button" data-i18n="LLM Configuration">LLM 配置</button>
+            <button id="tab_prompt" class="menu_button" data-i18n="Prompt Editor">提示词编辑</button>
+            <button id="tab_general" class="menu_button" data-i18n="General Settings">通用设置</button>
+        </div>
+
+        <!-- LLM配置标签页 -->
+        <div id="panel_llm" class="tab-panel">
+            <hr>
+            <div class="flex-container flexnowrap">
+                <label class="checkbox_label" for="aiagp_enabled">
+                    <span data-i18n="Enable Auto Generation">启用自动生图</span>
+                    <input type="checkbox" id="aiagp_enabled" class="checkbox">
+                </label>
+            </div>
+            <div class="">
+                <div><label for="aiagp_api_url" class="flex1" data-i18n="API Base URL">API 基础地址</label></div>
+                <input id="aiagp_api_url" class="text_pole" type="text" placeholder="https://api.openai.com/v1">
+            </div>
+            <div class="">
+                <div><label for="aiagp_api_key" class="flex1" data-i18n="API Key">API 密钥</label></div>
+                <input id="aiagp_api_key" class="text_pole" type="password" placeholder="sk-...">
+            </div>
+            <div class="flex-container flexGap5">
+                <div class="flex1">
+                    <div><label for="aiagp_model" class="flex1" data-i18n="Model">模型</label></div>
+                    <input id="aiagp_model" class="text_pole" type="text" placeholder="gpt-4">
+                </div>
+                <div style="width: 120px;">
+                    <div>&nbsp;</div>
+                    <button id="aiagp_fetch_models" class="menu_button" data-i18n="Fetch Models">拉取模型</button>
+                </div>
+            </div>
+            <div class="flex-container flexGap5">
+                <div class="flex1">
+                    <div><label for="aiagp_temperature" class="flex1" data-i18n="Temperature">温度</label></div>
+                    <input id="aiagp_temperature" class="text_pole" type="number" min="0" max="2" step="0.1" value="0.7">
+                </div>
+                <div class="flex1">
+                    <div><label for="aiagp_max_tokens" class="flex1" data-i18n="Max Tokens">最大 Token</label></div>
+                    <input id="aiagp_max_tokens" class="text_pole" type="number" min="100" max="4000" value="1000">
+                </div>
+            </div>
+            <div class="flex-container flexnowrap">
+                <label for="aiagp_history_count" class="flex1" data-i18n="Chat History Count">聊天历史条数</label>
+                <input id="aiagp_history_count" class="text_pole widthUnset" type="number" min="1" max="50" value="5">
+            </div>
+        </div>
+
+        <!-- 提示词编辑标签页 -->
+        <div id="panel_prompt" class="tab-panel" style="display: none;">
+            <hr>
+            <div class="">
+                <div><label for="aiagp_system_prompt" class="flex1" data-i18n="System Prompt">系统提示词</label></div>
+                <textarea id="aiagp_system_prompt" class="text_pole textarea_compact" rows="8"></textarea>
+            </div>
+            <div class="flex-container flexGap5">
+                <button id="aiagp_reset_prompt" class="menu_button" data-i18n="Reset to Default">恢复默认</button>
+                <button id="aiagp_test_prompt" class="menu_button" data-i18n="Test Prompt">测试提示词</button>
+            </div>
+            <hr>
+            <div class="">
+                <div><label for="aiagp_positive_tags" class="flex1" data-i18n="Mandatory Positive Tags">必填正面标签 (逗号分隔)</label></div>
+                <input id="aiagp_positive_tags" class="text_pole" type="text" placeholder="masterpiece, best quality">
+            </div>
+            <div class="">
+                <div><label for="aiagp_negative_tags" class="flex1" data-i18n="Mandatory Negative Tags">必填负面标签 (逗号分隔)</label></div>
+                <input id="aiagp_negative_tags" class="text_pole" type="text" placeholder="low quality, blurry">
+            </div>
+            <div class="">
+                <div><label for="aiagp_forbidden_words" class="flex1" data-i18n="Forbidden Words">禁用词汇 (逗号分隔)</label></div>
+                <input id="aiagp_forbidden_words" class="text_pole" type="text" placeholder="">
+            </div>
+        </div>
+
+        <!-- 通用设置标签页 -->
+        <div id="panel_general" class="tab-panel" style="display: none;">
+            <hr>
+            <div class="flex-container flexnowrap">
+                <label for="aiagp_trigger_mode" class="flex1" data-i18n="Trigger Mode">触发模式</label>
+                <select id="aiagp_trigger_mode" class="text_pole widthNatural margin0">
+                    <option value="auto" data-i18n="Auto">自动</option>
+                    <option value="keyword" data-i18n="Keyword">关键词</option>
+                    <option value="manual" data-i18n="Manual">手动</option>
+                </select>
+            </div>
+            <div id="keyword_setting" class="">
+                <div><label for="aiagp_trigger_keywords" class="flex1" data-i18n="Trigger Keywords">触发关键词 (逗号分隔)</label></div>
+                <input id="aiagp_trigger_keywords" class="text_pole" type="text" placeholder="生成图片, 画图, imagine">
+            </div>
+            <div class="flex-container flexnowrap">
+                <label for="aiagp_insert_type" class="flex1" data-i18n="Image Insert Type">图片插入方式</label>
+                <select id="aiagp_insert_type" class="text_pole widthNatural margin0">
+                    <option value="inline" data-i18n="Insert In Current Message">插入当前消息</option>
+                    <option value="new" data-i18n="Create New Message">创建新消息</option>
+                </select>
+            </div>
+            <div class="flex-container flexnowrap">
+                <label for="aiagp_caption_position" class="flex1" data-i18n="Caption Position">中文注释位置</label>
+                <select id="aiagp_caption_position" class="text_pole widthNatural margin0">
+                    <option value="title" data-i18n="Image Title">图片标题</option>
+                    <option value="below" data-i18n="Below Image">图片下方</option>
+                    <option value="both" data-i18n="Both">两者都</option>
+                </select>
+            </div>
+            <hr>
+            <div class="flex-container flexGap5">
+                <button id="aiagp_generate_now" class="menu_button" data-i18n="Generate Now">立即生成</button>
+                <button id="aiagp_clear_log" class="menu_button" data-i18n="Clear Log">清除日志</button>
+            </div>
+            <div id="aiagp_log" class="aiagp-log-container"></div>
+        </div>
+    </div>
+</div>
