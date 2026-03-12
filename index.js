@@ -144,11 +144,14 @@ function updateConnectionProfileList() {
 
 async function loadSettings() {
     extension_settings[extensionName] = extension_settings[extensionName] || {};
-    const settings = extension_settings[extensionName];
 
-    for (const key in defaultSettings) {
-        if (settings[key] === undefined) {
-            settings[key] = defaultSettings[key];
+    if (Object.keys(extension_settings[extensionName]).length === 0) {
+        Object.assign(extension_settings[extensionName], defaultSettings);
+    } else {
+        for (const key in defaultSettings) {
+            if (extension_settings[extensionName][key] === undefined) {
+                extension_settings[extensionName][key] = defaultSettings[key];
+            }
         }
     }
 
