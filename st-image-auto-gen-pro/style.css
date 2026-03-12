@@ -1,0 +1,19 @@
+.aiagp-log-container {
+    max-height: 200px;
+    overflow-y: auto;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+    padding: 8px;
+    margin-top: 10px;
+}
+
+.tab-panel {
+    padding: 10px 0;
+}
+
+#tab_llm.selected,
+#tab_prompt.selected,
+#tab_general.selected {
+    background-color: var(--secondary-bg);
+    border-bottom: 2px solid var(--main-color);
+}
