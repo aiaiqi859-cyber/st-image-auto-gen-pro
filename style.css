@@ -1,19 +1,171 @@
-.aiagp-log-container {
-    max-height: 200px;
-    overflow-y: auto;
-    background: rgba(0, 0, 0, 0.2);
-    border-radius: 4px;
-    padding: 8px;
-    margin-top: 10px;
+/* 美化UI样式 */
+#aiagp_container {
+    background: linear-gradient(135deg, rgba(30, 30, 40, 0.95), rgba(20, 20, 30, 0.98));
+    border-radius: 12px;
+    padding: 16px;
+    border: 1px solid rgba(100, 100, 150, 0.3);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
 }
 
-.tab-panel {
-    padding: 10px 0;
+#aiagp_container .inline-drawer-header {
+    background: linear-gradient(90deg, rgba(100, 65, 165, 0.3), rgba(65, 105, 225, 0.2));
+    border-radius: 8px;
+    margin-bottom: 12px;
+}
+
+#aiagp_container .inline-drawer-header b {
+    background: linear-gradient(90deg, #a78bfa, #60a5fa);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* 标签页美化 */
+#tab_llm,
+#tab_prompt,
+#tab_general {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border-radius: 8px;
+    border: 1px solid transparent;
 }
 
 #tab_llm.selected,
 #tab_prompt.selected,
 #tab_general.selected {
-    background-color: var(--secondary-bg);
-    border-bottom: 2px solid var(--main-color);
+    background: linear-gradient(135deg, rgba(100, 65, 165, 0.4), rgba(65, 105, 225, 0.3));
+    border: 1px solid rgba(167, 139, 250, 0.5);
+    box-shadow: 0 4px 12px rgba(167, 139, 250, 0.2);
+}
+
+/* 输入框美化 */
+#aiagp_container .text_pole {
+    border-radius: 8px;
+    border: 1px solid rgba(100, 100, 150, 0.4);
+    background: rgba(20, 20, 30, 0.8);
+    transition: all 0.2s ease;
+}
+
+#aiagp_container .text_pole:focus {
+    border-color: #a78bfa;
+    box-shadow: 0 0 0 3px rgba(167, 139, 250, 0.2);
+}
+
+/* 按钮美化 */
+#aiagp_container .menu_button {
+    border-radius: 8px;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    border: none;
+    transition: all 0.2s ease;
+    font-weight: 500;
+}
+
+#aiagp_container .menu_button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
+}
+
+/* 模型下拉列表 */
+.aiagp-model-select {
+    max-height: 200px;
+    overflow-y: auto;
+    background: rgba(20, 20, 35, 0.98);
+    border: 1px solid rgba(100, 100, 150, 0.4);
+    border-radius: 8px;
+    margin-top: 4px;
+    display: none;
+    position: absolute;
+    width: 100%;
+    z-index: 1000;
+}
+
+.aiagp-model-select.show {
+    display: block;
+}
+
+.aiagp-model-option {
+    padding: 10px 14px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    border-bottom: 1px solid rgba(100, 100, 150, 0.2);
+}
+
+.aiagp-model-option:last-child {
+    border-bottom: none;
+}
+
+.aiagp-model-option:hover {
+    background: rgba(167, 139, 250, 0.2);
+}
+
+.aiagp-model-option.selected {
+    background: rgba(167, 139, 250, 0.3);
+    border-left: 3px solid #a78bfa;
+}
+
+.aiagp-model-wrapper {
+    position: relative;
+}
+
+/* 预设方案选择 */
+.aiagp-preset-select {
+    border-radius: 8px;
+    border: 1px solid rgba(100, 100, 150, 0.4);
+    background: rgba(20, 20, 30, 0.8);
+    padding: 8px 12px;
+}
+
+/* 标签页内容区域 */
+.tab-panel {
+    padding: 16px 0;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* 日志容器 */
+.aiagp-log-container {
+    max-height: 220px;
+    overflow-y: auto;
+    background: linear-gradient(180deg, rgba(15, 15, 25, 0.95), rgba(10, 10, 20, 0.98));
+    border-radius: 10px;
+    padding: 12px;
+    margin-top: 12px;
+    border: 1px solid rgba(100, 100, 150, 0.3);
+}
+
+.aiagp-log-container::-webkit-scrollbar {
+    width: 6px;
+}
+
+.aiagp-log-container::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 3px;
+}
+
+.aiagp-log-container::-webkit-scrollbar-thumb {
+    background: rgba(167, 139, 250, 0.5);
+    border-radius: 3px;
+}
+
+/* 分割线 */
+#aiagp_container hr {
+    border: none;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(100, 100, 150, 0.4), transparent);
+    margin: 16px 0;
+}
+
+/* 标签美化 */
+#aiagp_container label {
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.9);
 }

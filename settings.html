@@ -20,18 +20,43 @@
                     <input type="checkbox" id="aiagp_enabled" class="checkbox">
                 </label>
             </div>
-            <div class="">
-                <div><label for="aiagp_api_url" class="flex1" data-i18n="API Base URL">API 基础地址</label></div>
-                <input id="aiagp_api_url" class="text_pole" type="text" placeholder="https://api.openai.com/v1">
+
+            <!-- LLM来源选择 -->
+            <div class="flex-container flexnowrap">
+                <label for="aiagp_llm_source" class="flex1" data-i18n="LLM Source">LLM 来源</label>
+                <select id="aiagp_llm_source" class="text_pole widthNatural margin0">
+                    <option value="main_api" data-i18n="Use Main Chat API">使用聊天主 API</option>
+                    <option value="preset" data-i18n="Select Preset">选择酒馆预设</option>
+                    <option value="custom" data-i18n="Custom Configuration">自定义配置</option>
+                </select>
             </div>
-            <div class="">
-                <div><label for="aiagp_api_key" class="flex1" data-i18n="API Key">API 密钥</label></div>
-                <input id="aiagp_api_key" class="text_pole" type="password" placeholder="sk-...">
+
+            <!-- 预设选择 -->
+            <div id="preset_setting" style="display: none;">
+                <div class="flex-container flexnowrap">
+                    <label for="aiagp_preset" class="flex1" data-i18n="Select Preset">选择预设</label>
+                    <select id="aiagp_preset" class="text_pole widthNatural margin0">
+                        <option value="" disabled>加载中...</option>
+                    </select>
+                </div>
             </div>
+
+            <div id="custom_llm_settings">
+                <div class="">
+                    <div><label for="aiagp_api_url" class="flex1" data-i18n="API Base URL">API 基础地址</label></div>
+                    <input id="aiagp_api_url" class="text_pole" type="text" placeholder="https://api.openai.com/v1">
+                </div>
+                <div class="">
+                    <div><label for="aiagp_api_key" class="flex1" data-i18n="API Key">API 密钥</label></div>
+                    <input id="aiagp_api_key" class="text_pole" type="password" placeholder="sk-...">
+                </div>
+            </div>
+
             <div class="flex-container flexGap5">
-                <div class="flex1">
+                <div class="flex1 aiagp-model-wrapper">
                     <div><label for="aiagp_model" class="flex1" data-i18n="Model">模型</label></div>
                     <input id="aiagp_model" class="text_pole" type="text" placeholder="gpt-4">
+                    <div id="aiagp_model_list" class="aiagp-model-select"></div>
                 </div>
                 <div style="width: 120px;">
                     <div>&nbsp;</div>

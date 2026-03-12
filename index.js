@@ -32,6 +32,8 @@ const DEFAULT_SYSTEM_PROMPT = `你是一个专业的图像提示词生成助手�
 
 const defaultSettings = {
     enabled: false,
+    llmSource: 'main_api',
+    selectedPreset: '',
     apiUrl: 'https://api.openai.com/v1',
     apiKey: '',
     model: 'gpt-4',
@@ -49,6 +51,7 @@ const defaultSettings = {
 };
 
 let logContainer = null;
+let currentModels = [];
 
 function addLog(message, type = 'info') {
     if (!logContainer) return;
@@ -75,11 +78,88 @@ function addLog(message, type = 'info') {
     logContainer.scrollTop = logContainer.scrollHeight;
 }
 
+// 获取酒馆预设列表
+function getPresetList() {
+    try {
+        if (window.TavernHelper && typeof window.TavernHelper.getPresetNames === 'function') {
+            return window.TavernHelper.getPresetNames();
+        }
+    } catch (e) {
+        console.log('无法获取预设列表:', e);
+    }
+    return [];
+}
+
+// 获取当前使用的预设名称
+function getCurrentPresetName() {
+    try {
+        if (window.TavernHelper && typeof window.TavernHelper.getLoadedPresetName === 'function') {
+            return window.TavernHelper.getLoadedPresetName();
+        }
+    } catch (e) {
+        console.log('无法获取当前预设:', e);
+    }
+    return '';
+}
+
+// 获取主API配置
+function getMainApiConfig() {
+    const context = getContext();
+    try {
+        if (context.chatCompletionSettings) {
+            return {
+                apiUrl: context.chatCompletionSettings.api_url || 'https://api.openai.com/v1',
+                apiKey: context.chatCompletionSettings.api_key || '',
+                model: context.chatCompletionSettings.model || 'gpt-4',
+            };
+        }
+    } catch (e) {
+        console.log('无法获取主API配置:', e);
+    }
+    return null;
+}
+
+// 获取当前LLM配置
+function getCurrentLLMConfig() {
+    const settings = extension_settings[extensionName];
+
+    if (settings.llmSource === 'main_api') {
+        const mainConfig = getMainApiConfig();
+        if (mainConfig) {
+            addLog('使用主API配置', 'info');
+            return mainConfig;
+        }
+        addLog('无法获取主API配置，回退到自定义配置', 'warning');
+    } else if (settings.llmSource === 'preset' && settings.selectedPreset) {
+        try {
+            if (window.TavernHelper && typeof window.TavernHelper.getPreset === 'function') {
+                const preset = window.TavernHelper.getPreset(settings.selectedPreset);
+                addLog(`使用预设: ${settings.selectedPreset}`, 'info');
+                return {
+                    apiUrl: settings.apiUrl,
+                    apiKey: settings.apiKey,
+                    model: settings.model,
+                };
+            }
+        } catch (e) {
+            console.log('无法获取预设配置:', e);
+            addLog('无法获取预设配置，回退到自定义配置', 'warning');
+        }
+    }
+
+    return {
+        apiUrl: settings.apiUrl,
+        apiKey: settings.apiKey,
+        model: settings.model,
+    };
+}
+
 function updateUI() {
     const settings = extension_settings[extensionName];
     if (!settings) return;
 
     $('#aiagp_enabled').prop('checked', settings.enabled);
+    $('#aiagp_llm_source').val(settings.llmSource);
     $('#aiagp_api_url').val(settings.apiUrl);
     $('#aiagp_api_key').val(settings.apiKey);
     $('#aiagp_model').val(settings.model);
@@ -94,7 +174,34 @@ function updateUI() {
     $('#aiagp_trigger_keywords').val(settings.triggerKeywords);
     $('#aiagp_insert_type').val(settings.insertType);
     $('#aiagp_caption_position').val(settings.captionPosition);
+
+    // 切换显示的设置项
     $('#keyword_setting').toggle(settings.triggerMode === 'keyword');
+    $('#custom_llm_settings').toggle(settings.llmSource === 'custom');
+    $('#preset_setting').toggle(settings.llmSource === 'preset');
+
+    // 更新预设列表
+    updatePresetList();
+}
+
+// 更新预设列表
+function updatePresetList() {
+    const presetSelect = $('#aiagp_preset');
+    const presets = getPresetList();
+    const currentPreset = getCurrentPresetName();
+    const settings = extension_settings[extensionName];
+
+    presetSelect.empty();
+    presetSelect.append('<option value="" disabled>选择预设...</option>');
+
+    presets.forEach(preset => {
+        const isSelected = settings.selectedPreset === preset || (!settings.selectedPreset && currentPreset === preset);
+        presetSelect.append(`<option value="${preset}" ${isSelected ? 'selected' : ''}>${preset}</option>`);
+    });
+
+    if (currentPreset) {
+        presetSelect.append(`<option value="__current__" ${settings.selectedPreset === '__current__' ? 'selected' : ''}>当前使用: ${currentPreset}</option>`);
+    }
 }
 
 async function loadSettings() {
@@ -125,10 +232,80 @@ function setupTabs() {
     $('#tab_llm').addClass('selected');
 }
 
+// 渲染模型下拉列表
+function renderModelList(models, selectedModel) {
+    const listContainer = $('#aiagp_model_list');
+    listContainer.empty();
+
+    models.forEach(model => {
+        const option = document.createElement('div');
+        option.className = `aiagp-model-option ${model === selectedModel ? 'selected' : ''}`;
+        option.textContent = model;
+        option.onclick = () => {
+            $('#aiagp_model').val(model);
+            extension_settings[extensionName].model = model;
+            saveSettingsDebounced();
+            hideModelList();
+            addLog(`已选择模型: ${model}`, 'success');
+        };
+        listContainer.append(option);
+    });
+}
+
+// 显示模型列表
+function showModelList() {
+    if (currentModels.length > 0) {
+        $('#aiagp_model_list').addClass('show');
+    }
+}
+
+// 隐藏模型列表
+function hideModelList() {
+    $('#aiagp_model_list').removeClass('show');
+}
+
+async function fetchModels() {
+    const config = getCurrentLLMConfig();
+
+    if (!config.apiUrl || !config.apiKey) {
+        toastr.error('请先配置API地址和密钥');
+        return;
+    }
+
+    try {
+        addLog('正在拉取模型列表...', 'info');
+        const response = await fetch(`${config.apiUrl}/models`, {
+            headers: { 'Authorization': `Bearer ${config.apiKey}` },
+        });
+
+        if (!response.ok) throw new Error(`请求失败: ${response.status}`);
+
+        const data = await response.json();
+        currentModels = data.data?.map(m => m.id) || [];
+
+        if (currentModels.length > 0) {
+            renderModelList(currentModels, config.model);
+            if (!currentModels.includes(config.model)) {
+                $('#aiagp_model').val(currentModels[0]);
+                extension_settings[extensionName].model = currentModels[0];
+                saveSettingsDebounced();
+            }
+            toastr.success(`获取到 ${currentModels.length} 个模型，点击输入框选择`);
+            addLog(`模型列表已加载: ${currentModels.join(', ')}`, 'success');
+        } else {
+            toastr.warning('未获取到模型列表');
+        }
+    } catch (error) {
+        toastr.error(`拉取模型失败: ${error.message}`);
+        addLog(`拉取模型失败: ${error.message}`, 'error');
+    }
+}
+
 async function callLLMForPrompts(chatHistory) {
     const settings = extension_settings[extensionName];
+    const config = getCurrentLLMConfig();
 
-    if (!settings.apiUrl || !settings.apiKey || !settings.model) {
+    if (!config.apiUrl || !config.apiKey || !config.model) {
         throw new Error('LLM配置不完整');
     }
 
@@ -159,14 +336,14 @@ ${settings.forbiddenWords ? `- 禁止使用：${settings.forbiddenWords}` : ''}`
 
     messages.push(...chatHistory);
 
-    const response = await fetch(`${settings.apiUrl}/chat/completions`, {
+    const response = await fetch(`${config.apiUrl}/chat/completions`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${settings.apiKey}`,
+            'Authorization': `Bearer ${config.apiKey}`,
         },
         body: JSON.stringify({
-            model: settings.model,
+            model: config.model,
             messages: messages,
             temperature: parseFloat(settings.temperature),
             max_tokens: parseInt(settings.maxTokens),
@@ -299,36 +476,6 @@ async function generateAndInsertImage(messageIndex) {
     }
 }
 
-async function fetchModels() {
-    const settings = extension_settings[extensionName];
-
-    if (!settings.apiUrl || !settings.apiKey) {
-        toastr.error('请先配置API地址和密钥');
-        return;
-    }
-
-    try {
-        const response = await fetch(`${settings.apiUrl}/models`, {
-            headers: { 'Authorization': `Bearer ${settings.apiKey}` },
-        });
-
-        if (!response.ok) throw new Error(`请求失败: ${response.status}`);
-
-        const data = await response.json();
-        const models = data.data?.map(m => m.id) || [];
-
-        if (models.length > 0) {
-            const modelInput = $('#aiagp_model');
-            modelInput.val(models[0]);
-            toastr.success(`获取到 ${models.length} 个模型`);
-            addLog(`模型列表: ${models.join(', ')}`, 'info');
-        }
-    } catch (error) {
-        toastr.error(`拉取模型失败: ${error.message}`);
-        addLog(`拉取模型失败: ${error.message}`, 'error');
-    }
-}
-
 async function createSettings(settingsHtml) {
     if (!$('#aiagp_container').length) {
         $('#extensions_settings2').append(
@@ -341,167 +488,93 @@ async function createSettings(settingsHtml) {
 
     setupTabs();
 
+    // 模型输入框点击事件
+    $('#aiagp_model').on('focus', showModelList);
+    $(document).on('click', function(e) {
+        if (!$(e.target).closest('#aiagp_model, #aiagp_model_list').length) {
+            hideModelList();
+        }
+    });
+
     $('#aiagp_enabled').on('change', function() {
         extension_settings[extensionName].enabled = $(this).prop('checked');
         saveSettingsDebounced();
     });
 
-    $('#aiagp_api_url').on('input', function() {
-        extension_settings[extensionName].apiUrl = $(this).val();
+    $('#aiagp_llm_source').on('change', function() {
+        const source = $(this).val();
+        extension_settings[extensionName].llmSource = source;
+        updateUI();
         saveSettingsDebounced();
     });
 
-    $('#aiagp_api_key').on('input', function() {
-        extension_settings[extensionName].apiKey = $(this).val();
+    $('#aiagp_preset').on('change', function() {
+        extension_settings[extensionName].selectedPreset = $(this).val();
         saveSettingsDebounced();
     });
 
-    $('#aiagp_model').on('input', function() {
-        extension_settings[extensionName].model = $(this).val();
+    $('#aiagp_api_url, #aiagp_api_key, #aiagp_model, #aiagp_temperature, #aiagp_max_tokens, #aiagp_history_count, #aiagp_system_prompt, #aiagp_positive_tags, #aiagp_negative_tags, #aiagp_forbidden_words, #aiagp_trigger_keywords').on('input', function() {
+        const id = $(this).attr('id').replace('aiagp_', '');
+        extension_settings[extensionName][id] = $(this).val();
         saveSettingsDebounced();
     });
 
-    $('#aiagp_temperature').on('input', function() {
-        extension_settings[extensionName].temperature = $(this).val();
+    $('#aiagp_trigger_mode, #aiagp_insert_type, #aiagp_caption_position').on('change', function() {
+        const id = $(this).attr('id').replace('aiagp_', '');
+        extension_settings[extensionName][id] = $(this).val();
+        updateUI();
         saveSettingsDebounced();
     });
-
-    $('#aiagp_max_tokens').on('input', function() {
-        extension_settings[extensionName].maxTokens = $(this).val();
-        saveSettingsDebounced();
-    });
-
-    $('#aiagp_history_count').on('input', function() {
-        extension_settings[extensionName].historyCount = $(this).val();
-        saveSettingsDebounced();
-    });
-
-    $('#aiagp_system_prompt').on('input', function() {
-        extension_settings[extensionName].systemPrompt = $(this).val();
-        saveSettingsDebounced();
-    });
-
-    $('#aiagp_positive_tags').on('input', function() {
-        extension_settings[extensionName].positiveTags = $(this).val();
-        saveSettingsDebounced();
-    });
-
-    $('#aiagp_negative_tags').on('input', function() {
-        extension_settings[extensionName].negativeTags = $(this).val();
-        saveSettingsDebounced();
-    });
-
-    $('#aiagp_forbidden_words').on('input', function() {
-        extension_settings[extensionName].forbiddenWords = $(this).val();
-        saveSettingsDebounced();
-    });
-
-    $('#aiagp_trigger_mode').on('change', function() {
-        extension_settings[extensionName].triggerMode = $(this).val();
-        $('#keyword_setting').toggle($(this).val() === 'keyword');
-        saveSettingsDebounced();
-    });
-
-    $('#aiagp_trigger_keywords').on('input', function() {
-        extension_settings[extensionName].triggerKeywords = $(this).val();
-        saveSettingsDebounced();
-    });
-
-    $('#aiagp_insert_type').on('change', function() {
-        extension_settings[extensionName].insertType = $(this).val();
-        saveSettingsDebounced();
-    });
-
-    $('#aiagp_caption_position').on('change', function() {
-        extension_settings[extensionName].captionPosition = $(this).val();
-        saveSettingsDebounced();
-    });
-
-    $('#aiagp_fetch_models').on('click', fetchModels);
 
     $('#aiagp_reset_prompt').on('click', function() {
         extension_settings[extensionName].systemPrompt = DEFAULT_SYSTEM_PROMPT;
         $('#aiagp_system_prompt').val(DEFAULT_SYSTEM_PROMPT);
         saveSettingsDebounced();
-        toastr.info('已恢复默认提示词');
+        toastr.success('提示词已恢复默认');
     });
 
     $('#aiagp_test_prompt').on('click', async function() {
-        addLog('测试提示词生成...', 'info');
-        try {
-            const history = getChatHistory();
-            const result = await callLLMForPrompts(history);
-            addLog(`测试成功!\n英文: ${result.english_prompt}\n中文: ${result.chinese_caption}`, 'success');
-        } catch (e) {
-            addLog(`测试失败: ${e.message}`, 'error');
+        const lastMessageId = getLastMessageId();
+        if (lastMessageId >= 0) {
+            await generateAndInsertImage(lastMessageId);
+        } else {
+            toastr.warning('没有可用的消息');
         }
     });
 
+    $('#aiagp_fetch_models').on('click', fetchModels);
+
     $('#aiagp_generate_now').on('click', async function() {
-        const context = getContext();
-        if (context.chat.length > 0) {
-            await generateAndInsertImage(context.chat.length - 1);
+        const lastMessageId = getLastMessageId();
+        if (lastMessageId >= 0) {
+            await generateAndInsertImage(lastMessageId);
+        } else {
+            toastr.warning('没有可用的消息');
         }
     });
 
     $('#aiagp_clear_log').on('click', function() {
         if (logContainer) logContainer.innerHTML = '';
     });
-
-    updateUI();
 }
 
-function onExtensionButtonClick() {
-    const extensionsDrawer = $('#extensions-settings-button .drawer-toggle');
-    if ($('#rm_extensions_block').hasClass('closedDrawer')) {
-        extensionsDrawer.trigger('click');
-    }
-
-    setTimeout(() => {
-        const container = $('#aiagp_container');
-        if (container.length) {
-            $('#rm_extensions_block').animate({
-                scrollTop: container.offset().top - $('#rm_extensions_block').offset().top + $('#rm_extensions_block').scrollTop(),
-            }, 500);
-            const drawerContent = container.find('.inline-drawer-content');
-            const drawerHeader = container.find('.inline-drawer-header');
-            if (drawerContent.is(':hidden') && drawerHeader.length) {
-                drawerHeader.trigger('click');
-            }
-        }
-    }, 500);
-}
-
-$(function () {
-    (async function () {
-        const settingsHtml = await $.get(`${extensionFolderPath}/settings.html`);
-
-        $('#extensionsMenu').append(`<div id="aiagp_menu" class="list-group-item flex-container flexGap5">
-            <div class="fa-solid fa-images"></div>
-            <span data-i18n="Image Auto Gen Pro">Image Auto Gen Pro</span>
-        </div>`);
-
-        $('#aiagp_menu').off('click').on('click', onExtensionButtonClick);
-
-        await loadSettings();
-        await createSettings(settingsHtml);
-
-        $('#extensions-settings-button').on('click', function () {
-            setTimeout(() => {
-                updateUI();
-            }, 200);
-        });
-    })();
-});
-
-eventSource.on(event_types.MESSAGE_RECEIVED, async function () {
+function getLastMessageId() {
     const context = getContext();
-    if (context.chat.length === 0) return;
+    return context.chat.length - 1;
+}
 
-    const message = context.chat[context.chat.length - 1];
-    if (!shouldTrigger(message)) return;
+jQuery(async () => {
+    const settingsHtml = await $.get(`${extensionFolderPath}/settings.html`);
+    await loadSettings();
+    await createSettings(settingsHtml);
 
-    setTimeout(() => {
-        generateAndInsertImage(context.chat.length - 1);
-    }, 100);
+    eventSource.on(event_types.MESSAGE_RECEIVED, async (messageId) => {
+        const context = getContext();
+        const message = context.chat[messageId];
+        if (message && shouldTrigger(message)) {
+            await generateAndInsertImage(messageId);
+        }
+    });
+
+    addLog('Image Auto Gen Pro 已加载', 'success');
 });
