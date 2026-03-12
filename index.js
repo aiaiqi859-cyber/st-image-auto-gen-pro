@@ -53,13 +53,31 @@ const defaultSettings = {
 let logContainer = null;
 let currentModels = [];
 
-// 标准化API URL - 处理各种格式的输入
-function normalizeApiUrl(url) {
+// 标准化API URL - 处理各种格式的输入，确保有正确的后缀
+function getChatCompletionsUrl(url) {
     if (!url) return url;
 
     url = url.trim();
 
-    // 如果已经是完整的路径，先提取基础路径
+    // 如果已经是完整的聊天补全地址，直接返回
+    if (url.includes('/chat/completions')) {
+        return url;
+    }
+
+    // 移除末尾的斜杠
+    url = url.replace(/\/+$/, '');
+
+    // 添加聊天补全后缀
+    return `${url}/chat/completions`;
+}
+
+// 获取模型列表API URL
+function getModelsUrl(url) {
+    if (!url) return url;
+
+    url = url.trim();
+
+    // 如果包含聊天补全，替换为模型列表
     if (url.includes('/chat/completions')) {
         url = url.substring(0, url.indexOf('/chat/completions'));
     }
@@ -67,25 +85,7 @@ function normalizeApiUrl(url) {
     // 移除末尾的斜杠
     url = url.replace(/\/+$/, '');
 
-    return url;
-}
-
-// 获取API的基础URL（用于模型列表等）
-function getApiBaseUrl(url) {
-    const normalized = normalizeApiUrl(url);
-    return normalized;
-}
-
-// 获取聊天补全API URL
-function getChatCompletionsUrl(url) {
-    const base = normalizeApiUrl(url);
-    return `${base}/chat/completions`;
-}
-
-// 获取模型列表API URL
-function getModelsUrl(url) {
-    const base = normalizeApiUrl(url);
-    return `${base}/models`;
+    return `${url}/models`;
 }
 
 function addLog(message, type = 'info') {
@@ -355,8 +355,15 @@ async function callLLMForPrompts(chatHistory) {
     const settings = extension_settings[extensionName];
     const config = getCurrentLLMConfig();
 
-    if (!config.apiUrl || !config.apiKey || !config.model) {
-        throw new Error('LLM配置不完整');
+    // 检查配置 - 自定义模式需要完整配置，其他模式只需要有apiUrl和apiKey
+    if (settings.llmSource === 'custom') {
+        if (!config.apiUrl || !config.apiKey || !config.model) {
+            throw new Error('LLM配置不完整');
+        }
+    } else {
+        if (!config.apiUrl || !config.apiKey) {
+            throw new Error('LLM配置不完整');
+        }
     }
 
     const messages = [

@@ -51,28 +51,26 @@
                     <div><label for="aiagp_api_key" class="flex1" data-i18n="API Key">API 密钥</label></div>
                     <input id="aiagp_api_key" class="text_pole" type="password" placeholder="sk-...">
                 </div>
-            </div>
-
-            <!-- 模型选择 -->
-            <div class="flex-container flexGap5">
-                <div class="flex1 aiagp-model-wrapper">
-                    <div><label for="aiagp_model" class="flex1" data-i18n="Model">模型</label></div>
-                    <input id="aiagp_model" class="text_pole" type="text" placeholder="gpt-4">
-                    <div id="aiagp_model_list" class="aiagp-model-select"></div>
+                <div class="flex-container flexGap5">
+                    <div class="flex1 aiagp-model-wrapper">
+                        <div><label for="aiagp_model" class="flex1" data-i18n="Model">模型</label></div>
+                        <input id="aiagp_model" class="text_pole" type="text" placeholder="gpt-4">
+                        <div id="aiagp_model_list" class="aiagp-model-select"></div>
+                    </div>
+                    <div style="width: 120px;">
+                        <div>&nbsp;</div>
+                        <button id="aiagp_fetch_models" class="menu_button" data-i18n="Fetch Models">拉取模型</button>
+                    </div>
                 </div>
-                <div style="width: 120px;">
-                    <div>&nbsp;</div>
-                    <button id="aiagp_fetch_models" class="menu_button" data-i18n="Fetch Models">拉取模型</button>
-                </div>
-            </div>
-            <div class="flex-container flexGap5">
-                <div class="flex1">
-                    <div><label for="aiagp_temperature" class="flex1" data-i18n="Temperature">温度</label></div>
-                    <input id="aiagp_temperature" class="text_pole" type="number" min="0" max="2" step="0.1" value="0.7">
-                </div>
-                <div class="flex1">
-                    <div><label for="aiagp_max_tokens" class="flex1" data-i18n="Max Tokens">最大 Token</label></div>
-                    <input id="aiagp_max_tokens" class="text_pole" type="number" min="100" max="4000" value="1000">
+                <div class="flex-container flexGap5">
+                    <div class="flex1">
+                        <div><label for="aiagp_temperature" class="flex1" data-i18n="Temperature">温度</label></div>
+                        <input id="aiagp_temperature" class="text_pole" type="number" min="0" max="2" step="0.1" value="0.7">
+                    </div>
+                    <div class="flex1">
+                        <div><label for="aiagp_max_tokens" class="flex1" data-i18n="Max Tokens">最大 Token</label></div>
+                        <input id="aiagp_max_tokens" class="text_pole" type="number" min="100" max="4000" value="1000">
+                    </div>
                 </div>
             </div>
             <div class="flex-container flexnowrap">
